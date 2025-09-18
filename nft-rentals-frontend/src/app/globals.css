@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Theme tokens */
+  --black-primary: #0A0A0A;
+  --black-secondary: #121212;
+  --black-tertiary: #1A1A1A;
+  --silver-primary: #E8E8E8;
+  --silver-secondary: #C0C0C0;
+  --accent-blue: #00D4FF;
+  --accent-purple: #A855F7;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+
+  --background: var(--black-primary);
+  --foreground: var(--silver-primary);
+
+  /* Font CSS variables populated by next/font */
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: var(--black-primary);
+    --foreground: var(--silver-primary);
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: radial-gradient(1200px 800px at 10% 10%, rgba(0,212,255,0.08), transparent 40%),
+              radial-gradient(1200px 800px at 90% 30%, rgba(168,85,247,0.06), transparent 50%),
+              var(--background);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .border-gradient {
+    position: relative;
+  }
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+  .touch-action-pan {
+    touch-action: pan-y;
+  }
+}
