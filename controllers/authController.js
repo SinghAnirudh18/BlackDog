@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const userRepo = require('../repositories/userRepo');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT token
@@ -10,14 +10,34 @@ const generateToken = (userId) => {
   );
 };
 
+// Update/sync wallet address
+const setWalletAddress = async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
+    if (!walletAddress) {
+      return res.status(400).json({ success: false, message: 'walletAddress is required' });
+    }
+    const user = await userRepo.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    user.walletAddress = walletAddress;
+    await userRepo.save(user);
+    return res.json({ success: true, message: 'Wallet updated', user: userRepo.sanitize(user) });
+  } catch (error) {
+    console.error('Set wallet error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 // Register new user
 const register = async (req, res) => {
   try {
     const { email, password, username, firstName, lastName, walletAddress } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
+    const existingUser = await userRepo.findOne({
+      $or: [{ email: email?.toLowerCase() }, { username }]
     });
 
     if (existingUser) {
@@ -28,30 +48,23 @@ const register = async (req, res) => {
     }
 
     // Create new user
-    const user = new User({
+    const user = await userRepo.createUser({
       email,
       password,
       username,
       walletAddress,
-      profile: {
-        firstName,
-        lastName
-      }
+      profile: { firstName, lastName },
     });
 
-    await user.save();
-
-    // Generate token
+    // Generate token and return JSON for frontend
     const token = generateToken(user._id);
-
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
-      data: {
-        user,
-        token
-      }
+      message: 'Registration successful',
+      token,
+      user: userRepo.sanitize(user)
     });
+    
 
   } catch (error) {
     console.error('Registration error:', error);
@@ -68,7 +81,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await userRepo.findOne({ email: email?.toLowerCase() });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -77,7 +90,7 @@ const login = async (req, res) => {
     }
 
     // Check password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await userRepo.comparePassword(user, password);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -85,17 +98,15 @@ const login = async (req, res) => {
       });
     }
 
-    // Generate token
+    // Generate token and return JSON for frontend
     const token = generateToken(user._id);
-
     res.json({
       success: true,
       message: 'Login successful',
-      data: {
-        user,
-        token
-      }
+      token,
+      user: userRepo.sanitize(user)
     });
+    
 
   } catch (error) {
     console.error('Login error:', error);
@@ -109,7 +120,7 @@ const login = async (req, res) => {
 // Get current user profile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await userRepo.findById(req.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -119,7 +130,7 @@ const getProfile = async (req, res) => {
 
     res.json({
       success: true,
-      data: { user }
+      data: { user: userRepo.sanitize(user) }
     });
 
   } catch (error) {
@@ -143,5 +154,6 @@ module.exports = {
   register,
   login,
   getProfile,
-  logout
+  logout,
+  setWalletAddress
 };

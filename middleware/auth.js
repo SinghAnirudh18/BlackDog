@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const userRepo = require('../repositories/userRepo');
 
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
@@ -22,7 +22,7 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Get user from token
-    const user = await User.findById(decoded.userId);
+    const user = await userRepo.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({
         success: false,

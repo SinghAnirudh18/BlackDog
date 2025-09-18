@@ -20,8 +20,8 @@ router.post('/', protect, createListing);
 // Get all listings with filters
 router.get('/', getListings);
 
-// Get specific listing
-router.get('/:id', getListing);
+// Get user's listings
+router.get('/user/my-listings', protect, getUserListings);
 
 // Update listing
 router.put('/:id', protect, updateListing);
@@ -29,7 +29,7 @@ router.put('/:id', protect, updateListing);
 // Delete listing
 router.delete('/:id', protect, deleteListing);
 
-// Get user's listings
-router.get('/user/my-listings', protect, getUserListings);
+// Get specific listing (place after more specific routes)
+router.get('/:id', getListing);
 
 module.exports = router;

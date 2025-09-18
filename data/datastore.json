@@ -1,0 +1,65 @@
+{
+  "users": [
+    {
+      "_id": "dcad08af-0c0c-4a34-9fad-0f0e96680b63",
+      "createdAt": "2025-09-18T21:21:50.596Z",
+      "updatedAt": "2025-09-18T21:21:50.596Z",
+      "email": "user1@example.com",
+      "password": "$2b$12$1AkYjWyaHcoSAymr24ov/.JMaNuy1FpWnHGQzG4vAWdHOMu.2z6va",
+      "username": "user1",
+      "walletAddress": "0x1111111111111111111111111111111111111111",
+      "profile": {
+        "firstName": "User",
+        "lastName": "One"
+      },
+      "emailVerified": false,
+      "ownedNFTs": [],
+      "rentedNFTs": [],
+      "nftStats": {
+        "totalOwned": 0,
+        "totalListed": 0,
+        "totalRented": 0,
+        "totalRentedOut": 0,
+        "portfolioValue": 0,
+        "totalEarnings": 0,
+        "totalSpent": 0
+      },
+      "collections": [],
+      "favoriteNFTs": [],
+      "favoriteCollections": [],
+      "watchlist": []
+    },
+    {
+      "_id": "6f43c7db-f6aa-4de0-b5c5-4447b43a01ad",
+      "createdAt": "2025-09-18T21:26:47.207Z",
+      "updatedAt": "2025-09-18T21:26:47.207Z",
+      "email": "user2@example.com",
+      "password": "$2b$12$QfQQPCYgncLXqvFRGjioN.c3ZkAIT7t0cETqLRf.dDe5PuwZUmkpW",
+      "username": "user2",
+      "walletAddress": "0x6475c193A37C27276D0174704968AaFb9EB500F1",
+      "profile": {
+        "firstName": "User",
+        "lastName": "One"
+      },
+      "emailVerified": false,
+      "ownedNFTs": [],
+      "rentedNFTs": [],
+      "nftStats": {
+        "totalOwned": 0,
+        "totalListed": 0,
+        "totalRented": 0,
+        "totalRentedOut": 0,
+        "portfolioValue": 0,
+        "totalEarnings": 0,
+        "totalSpent": 0
+      },
+      "collections": [],
+      "favoriteNFTs": [],
+      "favoriteCollections": [],
+      "watchlist": []
+    }
+  ],
+  "nfts": [],
+  "listings": [],
+  "nftcontracts": []
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-6">NFT Verification</h1>
+        
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h2 class="font-semibold mb-2">NFT Details:</h2>
+            <p><span class="font-medium">Contract Address:</span> <span class="break-all"><%= contractAddress %></span></p>
+            <p class="mt-2"><span class="font-medium">Token ID:</span> <%= tokenId %></p>
+            <p class="mt-2"><span class="font-medium">Wallet Address:</span> <span class="break-all"><%= walletAddress %></span></p>
+        </div>
+
+        <button 
+            id="verifyBtn" 
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+        >
+            Verify NFT Ownership
+        </button>
+
+        <div id="result" class="mt-4 p-4 rounded-lg hidden">
+            <!-- Results will be displayed here -->
+        </div>
+
+        <div id="loading" class="mt-4 text-center hidden">
+            <p class="text-blue-500">Verifying, please wait...</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('verifyBtn').addEventListener('click', async function() {
+            const verifyBtn = this;
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Show loading, hide previous results
+            verifyBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/nft/verify-quick', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contractAddress: '<%= contractAddress %>',
+                        tokenId: '<%= tokenId %>',
+                        walletAddress: '<%= walletAddress %>'
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Display results
+                resultDiv.innerHTML = '';
+                resultDiv.classList.remove('hidden');
+                
+                if (response.ok) {
+                    resultDiv.className = 'mt-4 p-4 bg-green-100 text-green-800 rounded-lg';
+                    resultDiv.innerHTML = `
+                        <h3 class="font-semibold">Verification Successful!</h3>
+                        <p class="mt-2">${data.message || 'NFT ownership verified successfully.'}</p>
+                        ${data.owner ? `<p class="mt-2">Owner: ${data.owner}</p>` : ''}
+                    `;
+                } else {
+                    resultDiv.className = 'mt-4 p-4 bg-red-100 text-red-800 rounded-lg';
+                    resultDiv.innerHTML = `
+                        <h3 class="font-semibold">Verification Failed</h3>
+                        <p class="mt-2">${data.message || 'Unable to verify NFT ownership.'}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'mt-4 p-4 bg-red-100 text-red-800 rounded-lg';
+                resultDiv.innerHTML = `
+                    <h3 class="font-semibold">Error</h3>
+                    <p class="mt-2">Network error: ${error.message}</p>
+                `;
+                resultDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+                verifyBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

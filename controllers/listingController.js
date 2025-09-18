@@ -1,19 +1,13 @@
-const Listing = require('../models/Listing');
-const NFT = require('../models/NFT');
-const User = require('../models/User');
+const listingRepo = require('../repositories/listingRepo');
+const nftRepo = require('../repositories/nftRepo');
+const userRepo = require('../repositories/userRepo');
 
 // Get user's NFTs that are available for listing (not already listed)
 const getUserNFTsForListing = async (req, res) => {
   try {
     const userId = req.userId;
-    const user = await User.findById(userId).populate({
-      path: 'ownedNFTs',
-      populate: {
-        path: 'contract',
-        select: 'name symbol address verified'
-      }
-    });
-    
+    const user = await userRepo.findById(userId);
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -21,27 +15,23 @@ const getUserNFTsForListing = async (req, res) => {
       });
     }
 
-    // Get NFTs that are not currently listed
+    // Load the user's owned NFTs and filter those without active listings
+    const owned = Array.isArray(user.ownedNFTs) ? user.ownedNFTs : [];
+    const ownedNfts = await Promise.all(owned.map((id) => nftRepo.findById(id))).then(arr => arr.filter(Boolean));
     const availableNFTs = [];
-    
-    for (const nft of user.ownedNFTs) {
-      // Check if NFT is already listed
-      const existingListing = await Listing.findOne({
-        nft: nft._id,
-        status: 'active'
-      });
-      
+    for (const nft of ownedNfts) {
+      const existingListing = await listingRepo.findOne({ nft: nft._id, status: 'active' });
       if (!existingListing) {
         availableNFTs.push({
           _id: nft._id,
           tokenId: nft.tokenId,
           contractAddress: nft.contractAddress,
           metadata: nft.metadata,
-          contract: nft.contract
+          contract: nft.contract, // may be undefined; frontend should handle
         });
       }
     }
-    
+
     res.json({
       success: true,
       data: {
@@ -50,7 +40,7 @@ const getUserNFTsForListing = async (req, res) => {
         totalOwned: user.ownedNFTs.length
       }
     });
-    
+
   } catch (error) {
     console.error('Get available NFTs error:', error);
     res.status(500).json({
@@ -64,25 +54,26 @@ const getUserNFTsForListing = async (req, res) => {
 const createListing = async (req, res) => {
   try {
     const userId = req.userId;
-    const user = await User.findById(userId);
+    const user = await userRepo.findById(userId);
+
     const {
       nftId,
       listingType, // 'sale' or 'rental'
       price, // in ETH or wei
       currency = 'ETH',
-      
+
       // Sale options
       isAuction = false,
       auctionEndDate,
       reservePrice,
       buyNowPrice,
-      
+
       // Rental options
       minRentalDays = 1,
       maxRentalDays = 30,
       securityDeposit,
       instantBooking = true,
-      
+
       // Listing details
       title,
       description,
@@ -99,7 +90,8 @@ const createListing = async (req, res) => {
     }
 
     // Verify NFT ownership
-    const nft = await NFT.findById(nftId).populate('contract');
+    const nft = await nftRepo.findById(nftId);
+
     if (!nft || nft.owner.toLowerCase() !== user.walletAddress.toLowerCase()) {
       return res.status(403).json({
         success: false,
@@ -108,10 +100,7 @@ const createListing = async (req, res) => {
     }
 
     // Check if NFT is already listed
-    const existingListing = await Listing.findOne({
-      nft: nftId,
-      status: 'active'
-    });
+    const existingListing = await listingRepo.findOne({ nft: nftId, status: 'active' });
 
     if (existingListing) {
       return res.status(400).json({
@@ -190,7 +179,7 @@ const createListing = async (req, res) => {
         minimumBid: isAuction ? (reservePrice || price).toString() : null,
         buyNowPrice: isAuction ? (buyNowPrice || price).toString() : price.toString()
       };
-      
+
       // Set expiration for auctions
       if (isAuction) {
         listingData.expiresAt = new Date(auctionEndDate);
@@ -198,37 +187,40 @@ const createListing = async (req, res) => {
     }
 
     // Create listing
-    const listing = new Listing(listingData);
-    await listing.save();
+    const listing = await listingRepo.create(listingData);
 
     // Update NFT status
-    nft.isListed = true;
-    nft.listingType = listingType;
-    nft.listingPrice = price.toString();
-    
-    if (listingType === 'rental') {
-      nft.rental.minDuration = minRentalDays * 86400;
-      nft.rental.maxDuration = maxRentalDays * 86400;
-      nft.rental.rentalPrice = price.toString();
-    }
-    
-    await nft.save();
+    const rentalUpdate = listingType === 'rental' ? {
+      rental: {
+        ...(nft.rental || {}),
+        minDuration: minRentalDays * 86400,
+        maxDuration: maxRentalDays * 86400,
+        rentalPrice: price.toString(),
+      }
+    } : {};
+    await nftRepo.updateById(nft._id, {
+      isListed: true,
+      listingType: listingType,
+      listingPrice: price.toString(),
+      ...rentalUpdate,
+    });
 
     // Update user stats
+    if (!user.nftStats) user.nftStats = { totalOwned: 0, totalListed: 0, totalRented: 0, totalRentedOut: 0, portfolioValue: 0, totalEarnings: 0, totalSpent: 0 };
     user.nftStats.totalListed += 1;
-    await user.save();
+    await userRepo.save(user);
 
     // Populate the listing for response
-    const populatedListing = await Listing.findById(listing._id)
-      .populate('nft')
-      .populate('nft.contract', 'name symbol address verified');
+    const populatedListingNft = await nftRepo.findById(listing._id ? listing.nft : nftId);
+    const populatedListing = {
+      ...listing,
+      nft: populatedListingNft,
+    };
 
     res.status(201).json({
       success: true,
       message: `NFT listed for ${listingType} successfully`,
-      data: { 
-        listing: populatedListing
-      }
+      data: { listing: populatedListing }
     });
 
   } catch (error) {
@@ -258,10 +250,11 @@ const getListings = async (req, res) => {
 
     // Build filter object
     const filter = { status: 'active' };
+
     if (type) filter.type = type;
     if (category) filter.category = category;
     if (owner) filter.owner = owner.toLowerCase();
-    
+
     // Price filter
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -284,19 +277,15 @@ const getListings = async (req, res) => {
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
     // Execute query
-    const listings = await Listing.find(filter)
-      .populate({
-        path: 'nft',
-        populate: {
-          path: 'contract',
-          select: 'name symbol address verified'
-        }
-      })
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Listing.countDocuments(filter);
+    // Fetch, sort, and paginate via repository
+    const listingsRaw = await listingRepo.find(filter, { sort: sortOptions });
+    const total = await listingRepo.countDocuments(filter);
+    const listingsPage = listingsRaw.slice(skip, skip + parseInt(limit));
+    // Attach NFT records
+    const listings = await Promise.all(listingsPage.map(async (l) => ({
+      ...l,
+      nft: await nftRepo.findById(l.nft),
+    })));
 
     res.json({
       success: true,
@@ -332,14 +321,8 @@ const getListing = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const listing = await Listing.findById(id)
-      .populate({
-        path: 'nft',
-        populate: {
-          path: 'contract',
-          select: 'name symbol address verified'
-        }
-      });
+    const listing = await listingRepo.findById(id);
+    const nft = listing ? await nftRepo.findById(listing.nft) : null;
 
     if (!listing) {
       return res.status(404).json({
@@ -349,7 +332,7 @@ const getListing = async (req, res) => {
     }
 
     // Increment views
-    await Listing.findByIdAndUpdate(id, { $inc: { views: 1 } });
+    await listingRepo.updateById(id, { views: (listing.views || 0) + 1 });
 
     res.json({
       success: true,
@@ -372,7 +355,8 @@ const updateListing = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const listing = await Listing.findById(id);
+    const listing = await listingRepo.findById(id);
+
     if (!listing) {
       return res.status(404).json({
         success: false,
@@ -381,7 +365,7 @@ const updateListing = async (req, res) => {
     }
 
     // Verify ownership
-    const user = await User.findById(userId);
+    const user = await userRepo.findById(userId);
     if (listing.owner.toLowerCase() !== user.walletAddress.toLowerCase()) {
       return res.status(403).json({
         success: false,
@@ -396,7 +380,7 @@ const updateListing = async (req, res) => {
       'rental.instantRental', 'sale.auctionEnd', 'sale.minimumBid',
       'sale.buyNowPrice', 'status'
     ];
-    
+
     const filteredUpdates = {};
     Object.keys(updates).forEach(key => {
       if (allowedUpdates.includes(key)) {
@@ -405,23 +389,13 @@ const updateListing = async (req, res) => {
     });
 
     // Update listing
-    const updatedListing = await Listing.findByIdAndUpdate(
-      id,
-      filteredUpdates,
-      { new: true, runValidators: true }
-    ).populate({
-      path: 'nft',
-      populate: {
-        path: 'contract',
-        select: 'name symbol address verified'
-      }
-    });
+    await listingRepo.updateById(id, filteredUpdates);
+    const updated = await listingRepo.findById(id);
+    const updatedListing = { ...updated, nft: await nftRepo.findById(updated.nft) };
 
     // Update NFT if price changed
-    if (updates.price) {
-      await NFT.findByIdAndUpdate(updatedListing.nft._id, {
-        listingPrice: updates.price.toString()
-      });
+    if (updates.price && updatedListing.nft) {
+      await nftRepo.updateById(updatedListing.nft._id, { listingPrice: updates.price.toString() });
     }
 
     res.json({
@@ -445,7 +419,8 @@ const deleteListing = async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
-    const listing = await Listing.findById(id);
+    const listing = await listingRepo.findById(id);
+
     if (!listing) {
       return res.status(404).json({
         success: false,
@@ -454,7 +429,7 @@ const deleteListing = async (req, res) => {
     }
 
     // Verify ownership
-    const user = await User.findById(userId);
+    const user = await userRepo.findById(userId);
     if (listing.owner.toLowerCase() !== user.walletAddress.toLowerCase()) {
       return res.status(403).json({
         success: false,
@@ -463,25 +438,31 @@ const deleteListing = async (req, res) => {
     }
 
     // Update NFT status
-    const nft = await NFT.findById(listing.nft);
+    const nft = await nftRepo.findById(listing.nft);
     if (nft) {
-      nft.isListed = false;
-      nft.listingType = null;
-      nft.listingPrice = null;
-      if (listing.type === 'rental') {
-        nft.rental.minDuration = null;
-        nft.rental.maxDuration = null;
-        nft.rental.rentalPrice = null;
-      }
-      await nft.save();
+      const rentalReset = listing.type === 'rental' ? {
+        rental: {
+          ...(nft.rental || {}),
+          minDuration: null,
+          maxDuration: null,
+          rentalPrice: null,
+        }
+      } : {};
+      await nftRepo.updateById(nft._id, {
+        isListed: false,
+        listingType: null,
+        listingPrice: null,
+        ...rentalReset,
+      });
     }
 
     // Delete listing
-    await Listing.findByIdAndDelete(id);
+    await listingRepo.deleteById(id);
 
     // Update user stats
+    if (!user.nftStats) user.nftStats = { totalOwned: 0, totalListed: 0, totalRented: 0, totalRentedOut: 0, portfolioValue: 0, totalEarnings: 0, totalSpent: 0 };
     user.nftStats.totalListed = Math.max(0, user.nftStats.totalListed - 1);
-    await user.save();
+    await userRepo.save(user);
 
     res.json({
       success: true,
@@ -501,41 +482,30 @@ const deleteListing = async (req, res) => {
 const getUserListings = async (req, res) => {
   try {
     const userId = req.userId;
-    const user = await User.findById(userId);
-    
+    const user = await userRepo.findById(userId);
+
     const { status, type, page = 1, limit = 20 } = req.query;
-    
+
     const filter = { owner: user.walletAddress.toLowerCase() };
     if (status) filter.status = status;
     if (type) filter.type = type;
-    
+
     const skip = (page - 1) * parseInt(limit);
-    
-    const listings = await Listing.find(filter)
-      .populate({
-        path: 'nft',
-        populate: {
-          path: 'contract',
-          select: 'name symbol address verified'
-        }
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-    
-    const total = await Listing.countDocuments(filter);
-    
+
+    const all = await listingRepo.find(filter, { sort: { createdAt: -1 } });
+    const total = all.length;
+    const listings = all.slice(skip, skip + parseInt(limit));
     const stats = {
-      total: await Listing.countDocuments({ owner: user.walletAddress.toLowerCase() }),
-      active: await Listing.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'active' }),
-      sold: await Listing.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'sold' }),
-      rented: await Listing.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'rented' }),
-      inactive: await Listing.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'inactive' })
+      total: await listingRepo.countDocuments({ owner: user.walletAddress.toLowerCase() }),
+      active: await listingRepo.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'active' }),
+      sold: await listingRepo.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'sold' }),
+      rented: await listingRepo.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'rented' }),
+      inactive: await listingRepo.countDocuments({ owner: user.walletAddress.toLowerCase(), status: 'inactive' })
     };
 
     res.json({
       success: true,
-      data: { 
+      data: {
         listings,
         stats,
         pagination: {
@@ -562,7 +532,7 @@ const toggleListingStatus = async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
-    const listing = await Listing.findById(id);
+    const listing = await listingRepo.findById(id);
     if (!listing) {
       return res.status(404).json({
         success: false,
@@ -571,7 +541,7 @@ const toggleListingStatus = async (req, res) => {
     }
 
     // Verify ownership
-    const user = await User.findById(userId);
+    const user = await userRepo.findById(userId);
     if (listing.owner.toLowerCase() !== user.walletAddress.toLowerCase()) {
       return res.status(403).json({
         success: false,
@@ -580,22 +550,12 @@ const toggleListingStatus = async (req, res) => {
     }
 
     const newStatus = listing.status === 'active' ? 'inactive' : 'active';
-    const updatedListing = await Listing.findByIdAndUpdate(
-      id,
-      { status: newStatus },
-      { new: true }
-    ).populate({
-      path: 'nft',
-      populate: {
-        path: 'contract',
-        select: 'name symbol address verified'
-      }
-    });
+    await listingRepo.updateById(id, { status: newStatus });
+    const updated = await listingRepo.findById(id);
+    const updatedListing = { ...updated, nft: await nftRepo.findById(updated.nft) };
 
     // Update NFT status
-    await NFT.findByIdAndUpdate(listing.nft, {
-      isListed: newStatus === 'active'
-    });
+    await nftRepo.updateById(listing.nft, { isListed: newStatus === 'active' });
 
     res.json({
       success: true,

@@ -1,5 +1,50 @@
 const { body, validationResult } = require('express-validator');
 
+const { ethers } = require('ethers');
+
+// NFT verification validation
+const nftVerificationValidation = [
+  body('contractAddress')
+    .notEmpty()
+    .withMessage('Contract address is required')
+    .custom((value) => {
+      if (!ethers.utils.isAddress(value)) {
+        throw new Error('Invalid contract address');
+      }
+      return true;
+    }),
+  body('tokenId')
+    .notEmpty()
+    .withMessage('Token ID is required')
+    .isInt({ min: 0 })
+    .withMessage('Token ID must be a positive integer')
+];
+
+const quickVerifyValidation = [
+  body('contractAddress')
+    .notEmpty()
+    .withMessage('Contract address is required')
+    .custom((value) => {
+      if (!ethers.utils.isAddress(value)) {
+        throw new Error('Invalid contract address');
+      }
+      return true;
+    }),
+  body('tokenId')
+    .notEmpty()
+    .withMessage('Token ID is required')
+    .isInt({ min: 0 })
+    .withMessage('Token ID must be a positive integer'),
+  body('walletAddress')
+    .notEmpty()
+    .withMessage('Wallet address is required')
+    .custom((value) => {
+      if (!ethers.utils.isAddress(value)) {
+        throw new Error('Invalid wallet address');
+      }
+      return true;
+    })
+];
 // Validation rules
 const registerValidation = [
   body('email')
@@ -41,6 +86,7 @@ const handleValidationErrors = (req, res, next) => {
 
 module.exports = {
   registerValidation,
-  loginValidation,
+  loginValidation,nftVerificationValidation,
+  quickVerifyValidation,
   handleValidationErrors
 };
