@@ -1,0 +1,296 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NFT Marketplace Design System - Pinata-inspired (Indigo + Teal/Cyan) */
+
+@layer base {
+  :root {
+    /* Default variables */
+    --background: rgb(0, 0, 0); /* deep indigo/navy */
+    --foreground: rgba(255, 255, 255, 1);
+    --card: rgba(18, 22, 48, 1);
+    --card-foreground: rgba(240, 247, 255, 1);
+    --card-border: rgba(35, 48, 87, 1);
+    --popover: rgba(18, 22, 48, 1);
+    --popover-foreground: rgba(236, 245, 255, 1);
+    --primary: rgba(0, 198, 196, 1); /* teal/cyan */
+    --primary-foreground: rgba(10, 14, 34, 1);
+    --primary-hover: rgba(0, 220, 218, 1);
+    --secondary: rgba(29, 39, 76, 1);
+    --secondary-foreground: rgba(236, 245, 255, 1);
+    --secondary-hover: rgba(36, 51, 99, 1);
+    --muted: rgba(23, 30, 61, 1);
+    --muted-foreground: rgba(164, 183, 210, 1);
+    --accent: rgba(0, 180, 255, 1); /* cyan */
+    --accent-foreground: rgba(10, 14, 34, 1);
+    --accent-hover: rgba(56, 211, 255, 1);
+    --success: rgba(34, 197, 94, 1);
+    --success-foreground: rgba(10, 14, 34, 1);
+    --warning: rgba(251, 146, 60, 1);
+    --warning-foreground: rgba(10, 14, 34, 1);
+    --destructive: rgba(239, 68, 68, 1);
+    --destructive-foreground: rgba(255, 255, 255, 1);
+    --border: rgba(35, 48, 87, 1);
+    --input: rgba(18, 22, 48, 1);
+    --ring: rgba(0, 198, 196, 1);
+    --gradient-primary: linear-gradient(135deg, rgba(0, 198, 196, 1), rgba(0, 180, 255, 1));
+    --gradient-secondary: linear-gradient(135deg, rgba(23, 30, 61, 1), rgba(10, 14, 34, 1));
+    --gradient-hero: linear-gradient(120deg, rgba(0, 198, 196, 0.12), rgba(0, 180, 255, 0.12));
+    --shadow-glow: 0 8px 40px rgba(0, 198, 196, 0.25);
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 0.9rem;
+    /* Neon helpers */
+    --neon-cyan: rgba(0, 198, 196, 1);
+    --neon-blue: rgba(0, 180, 255, 1);
+    --neon-pink: rgba(255, 80, 180, 1);
+    --neon-purple: rgba(140, 100, 255, 1);
+    /* Jade color for glass effect */
+    --jade: rgba(0, 168, 132, 0.2);
+  }
+
+  /* Index Page - Hero Indigo with Cyan/Teal glow */
+  [data-page="index"] {
+    --background: rgba(10, 14, 34, 1);
+    --foreground: rgba(250, 250, 250, 1);
+    --gradient-hero: radial-gradient(800px 400px at 50% -50%, rgba(0, 198, 196, 0.25), rgba(0,0,0,0)),
+                     radial-gradient(600px 300px at 90% 10%, rgba(0, 180, 255, 0.18), rgba(0,0,0,0));
+  }
+
+  /* Login Page - Deep Indigo */
+  [data-page="login"] {
+    --background: rgba(12, 16, 40, 1);
+    --foreground: rgba(250, 250, 250, 1);
+    --card: rgba(18, 22, 48, 1);
+    --border: rgba(35, 48, 87, 1);
+  }
+
+  /* Marketplace Page - Dark to Muted gradient */
+  [data-page="marketplace"] {
+    --background: rgba(14, 18, 44, 1);
+    --foreground: rgba(236, 245, 255, 1);
+    --card: rgba(18, 22, 48, 1);
+    --border: rgba(35, 48, 87, 1);
+  }
+
+  /* Dark theme overrides */
+  .dark {
+    --background: rgba(6, 9, 24, 1);
+    --foreground: rgba(236, 245, 255, 1);
+    --card: rgba(12, 16, 40, 1);
+    --card-foreground: rgba(240, 247, 255, 1);
+    --card-border: rgba(30, 41, 82, 1);
+    --primary: rgba(0, 198, 196, 1);
+    --primary-foreground: rgba(6, 9, 24, 1);
+    --primary-hover: rgba(0, 220, 218, 1);
+    --secondary: rgba(23, 30, 61, 1);
+    --secondary-foreground: rgba(236, 245, 255, 1);
+    --secondary-hover: rgba(30, 41, 82, 1);
+    --accent: rgba(0, 180, 255, 1);
+    --accent-foreground: rgba(6, 9, 24, 1);
+    --accent-hover: rgba(56, 211, 255, 1);
+    --muted: rgba(18, 22, 48, 1);
+    --muted-foreground: rgba(148, 168, 198, 1);
+    --success: rgba(34, 197, 94, 1);
+    --success-foreground: rgba(6, 9, 24, 1);
+    --warning: rgba(251, 146, 60, 1);
+    --warning-foreground: rgba(6, 9, 24, 1);
+    --destructive: rgba(239, 68, 68, 1);
+    --destructive-foreground: rgba(255, 255, 255, 1);
+    --border: rgba(30, 41, 82, 1);
+    --input: rgba(12, 16, 40, 1);
+    --ring: rgba(0, 198, 196, 1);
+    --gradient-primary: linear-gradient(135deg, rgba(0, 198, 196, 1), rgba(0, 180, 255, 1));
+    --gradient-secondary: linear-gradient(135deg, rgba(23, 30, 61, 1), rgba(6, 9, 24, 1));
+    --gradient-hero: radial-gradient(900px 450px at 50% -60%, rgba(0, 198, 196, 0.25), rgba(0,0,0,0)),
+                     radial-gradient(700px 350px at 100% 10%, rgba(0, 180, 255, 0.2), rgba(0,0,0,0));
+    --shadow-glow: 0 12px 60px rgba(0, 198, 196, 0.35);
+    --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Dark theme page-specific overrides */
+  .dark[data-page="index"] {
+    --background: rgba(6, 9, 24, 1);
+  }
+
+  .dark[data-page="login"] {
+    --background: rgba(6, 9, 24, 1);
+  }
+
+  .dark[data-page="marketplace"] {
+    --background: rgba(6, 9, 24, 1);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  /* Stronger, vibrant focus rings for accessibility */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(10, 14, 34, 1), 0 0 0 4px var(--neon-cyan);
+    border-radius: calc(var(--radius) - 2px);
+    transition: box-shadow .2s ease;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Ensure the background applies to the full page */
+  html, body, #root {
+    min-height: 100vh;
+    background-color: var(--background);
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+  }
+}
+
+/* Utility classes for easier background changes */
+@layer utilities {
+  .bg-page-custom {
+    background-color: var(--background);
+  }
+  
+  .text-page-custom {
+    color: var(--foreground);
+  }
+
+  /* Neon gradient border utility using mask trick */
+  .border-gradient {
+    position: relative;
+  }
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px; /* border width */
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue), var(--neon-purple), var(--neon-pink));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    animation: gradient-rotate 6s linear infinite;
+    opacity: 0.9;
+  }
+
+  /* Animated gradient background utility */
+  .bg-animated-gradient {
+    background: linear-gradient(135deg, rgba(0, 198, 196, 0.12), rgba(0, 180, 255, 0.12), rgba(140, 100, 255, 0.12));
+    background-size: 200% 200%;
+    animation: gradient-pan 12s ease infinite;
+  }
+
+  /* Hover glow utilities */
+  .glow-on-hover {
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .glow-on-hover:hover {
+    box-shadow: 0 10px 40px rgba(8, 237, 176, 0.35), 0 0 0 1px rgba(0, 180, 255, 0.25) inset;
+    transform: translateY(-2px);
+  }
+
+  /* Button shine sweep */
+  .shine-on-hover {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine-on-hover::after {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: -50%;
+    width: 40%;
+    height: 300%;
+    transform: rotate(25deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    transition: transform .6s ease;
+  }
+  .shine-on-hover:hover::after {
+    transform: translateX(300%) rotate(25deg);
+  }
+
+  /* Subtle tilt */
+  .tilt-on-hover {
+    transition: transform .25s ease;
+  }
+  .tilt-on-hover:hover {
+    transform: perspective(600px) rotateX(2deg) rotateY(-2deg) translateY(-2px);
+  }
+
+  /* Glass effect with jade color */
+  .glass-effect-jade {
+    background: linear-gradient(var(--jade), var(--jade));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Keyframes for gradient animations */
+@keyframes gradient-rotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+@keyframes gradient-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Elevate existing card blocks globally without changing markup */
+.bg-card.border {
+  position: relative;
+  border-color: transparent !important; /* allow gradient border to show */
+}
+.bg-card.border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  padding: 1px; /* border width */
+  background: linear-gradient(135deg, rgba(0, 198, 196, 0.9), rgba(0, 180, 255, 0.9));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  animation: gradient-rotate 8s linear infinite;
+}
+.bg-card.border::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--radius) - 1px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+  pointer-events: none;
+}
+
+/* Stronger primary/accent glows without changing class usage */
+.bg-primary {
+  box-shadow: 0 6px 24px rgba(0, 198, 196, 0.35);
+}
+.bg-primary:hover {
+  box-shadow: 0 10px 36px rgba(0, 220, 218, 0.45);
+}
+.text-accent { text-shadow: 0 0 10px rgba(0, 180, 255, 0.35); }
